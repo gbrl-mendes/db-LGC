@@ -1,6 +1,6 @@
 #info ----
 
-# author: Heron O. Hilário
+# author: Heron O. Hilário; Gabriel M. Brito
 # purpose: integrate sequence files from different origins
 #         to construct the LGC 12S sequence database and format it
 #         for usage in DADA2.
