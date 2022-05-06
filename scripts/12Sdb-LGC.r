@@ -1,11 +1,11 @@
 #info ----
 
-# author: Heron O. Hilário; Gabriel M. Brito
-# purpose: integrate sequence files from different origins
+# Author: Heron O. Hilário; Gabriel M. Brito
+# Purpose: integrate sequence files from different origins
 #         to construct the LGC 12S sequence database and format it
 #         for usage in DADA2.
 #
-# references:
+# References:
 # https://www.bioconductor.org/help/course-materials/2016/BioC2016/ConcurrentWorkshops2/Wright/BigBioSeqData.pdf
 # https://www.bioconductor.org/packages/release/bioc/vignettes/DECIPHER/inst/doc/DECIPHERing.pdf
 # http://www2.decipher.codes/RLessons/RLesson14.html
