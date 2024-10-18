@@ -1,0 +1,19 @@
+09/04/24 Gabriel Mendes.
+
+Contextualizacao sobre o codigo lgc_db_full_NV.R
+
+O script lgc_db_full_NV é o código de criação do LGC12sDB.
+Igor pediu para que eu o atualizasse, entao essa versão é um híbrido do código 
+antigo e das atualizações que eu fiz. O código que eu fiz está assinado com meu
+nome (Gabriel M.) em cima do tópico correspondente.
+
+Neste código, o Igor pediu para que eu atualizasse o trecho de obtenção de taxonomias
+das sequências do DB. No jeito antigo, eram obtidas a partir do gênero, e na nova 
+adicionei duas etapas:
+  10a: Obtencao do TaxID a partir do genero das sequencias
+  10b Obtencao da taxonomia a partir do TaxID obtido
+
+Por último, o Igor pediu para que eu adicionasse um trecho para colocar as Sequencias
+nucleotidicas que estao no DB no dataframe DB_tbl. A solucao foi transformar o objeto
+DNAStringSet que armazena os fastas das sequencias do DB em um DataFrame com a funcao
+as.data.frame().

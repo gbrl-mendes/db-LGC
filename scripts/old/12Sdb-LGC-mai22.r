@@ -399,3 +399,4 @@ BrowseSeqs(subseq(dna_aligned[order(DB_tbl$Cluster),],326,532)) #mif seqs
 #tel FWD: 977-993
 #tel REV: 1078-1098
 BrowseSeqs(subseq(dna_aligned[order(DB_tbl$Cluster),],994,1077)) #tel seqs
+

@@ -1,0 +1,14 @@
+10/09/24 Gabriel Mendes.
+
+Este script é onde estou testando alterações nos cabecalhos das sequencias objetivando a correcao
+do output do BLASTr.
+
+Aparentemente os cabecalhos para o BLAST devem 
+seguir o padrao:
+
+>gi|xxxxxx|ref|customID| Especie_nome gene_descricao
+
+Vou usar o codigo mais atualizado alterando o output para salvar o DB para que nao sobrescreva o DB atual.
+Meu objetivo entao e' atualizar o DB e rodar o BLASTr
+para ver se melhora o output.
+
