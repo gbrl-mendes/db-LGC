@@ -33,10 +33,11 @@ metadata_tbl <- read_excel("/home/igorhan/projetos/LGCdb/data/db_tbl/Banco de Te
 
 # Filtrando as bacias e correcoes menores
 metadata_tbl_less <- metadata_tbl %>% 
-  filter(Bacia %in% c("Rio Doce",
-                      "Jequitinhonha",
-                      "São Francisco",
-                      "Pardo")) %>%
+  # filter(Bacia %in% c("Rio Doce",
+  #                     "Jequitinhonha",
+  #                     "São Francisco",
+  #                     "Pardo")) %>%
+  filter(Gênero == "Trichogenes") %>% 
   mutate(Identifier = str_pad(`Número LGC`, 4, "left", 0)) %>% 
   mutate(País = case_when(País == "Brasil" ~ "Brazil",
                           TRUE ~ País)) %>%
@@ -131,7 +132,10 @@ View(metadata_tbl_less)
 
 View(metadata_tbl_final_less)
 
-metadata_tbl_final_less %>% select(data_simplificada, `Data da coleta`) %>% filter(is.na(data_simplificada)) %>%  distinct()
+metadata_tbl_final_less %>% 
+  select(data_simplificada, `Data da coleta`) %>% 
+  filter(is.na(data_simplificada)) %>%  
+  distinct()
 
 # 5- Workaround on input ----
 
@@ -160,7 +164,7 @@ input_tbl_format <-
   input_tbl_less %>%
   # input_tbl_less[1,] %>%
   mutate(SeqID = str_extract(`Composed name`, "^[^ ]+")) %>% 
-  rename("Names" = "organism") %>% 
+  rename("organism" = Names) %>%
   mutate("isolate" = Identifier) %>% 
   mutate(isolation_source = case_when(
     `River basin` == "SF" ~ "Sao Francisco River Basin",
@@ -208,8 +212,8 @@ View(input_tbl)
 #Filtering seqs without date
 input_tbl_format_filt <- input_tbl_format %>% 
   filter(!is.na(data_simplificada)) %>% 
-  sort() %>% 
-  head() #pegando apenas as 6 primeiras para o teste
+  arrange(header)
+  # head() #pegando apenas as 6 primeiras para o teste
 
 View(input_tbl_format_filt)
 
