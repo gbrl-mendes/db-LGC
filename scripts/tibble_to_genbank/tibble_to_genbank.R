@@ -10,18 +10,25 @@ date: "07/2025"
   library(dplyr)
   library(stringr)
   library(readxl)
+  library(Biostrings)
+  library(DECIPHER)
 }
 
-# 2- Define output path ----
+# 2- Define paths ----
 
-output_folder <- "/home/gabriel/projetos/db-LGC/scripts/LGCdb/tibble_to_genbank/output"
+data_folder <- "/home/gabriel/projetos/db-LGC/data"
+output_folder <- "/home/gabriel/projetos/db-LGC/results/tibble_to_genbank"
+
+paths <- c(data_folder, output_folder)
 
 # Does this directory exists?
-if (!dir.exists(output_folder)) {
-  dir.create(output_folder, recursive = TRUE)
-  message("Directory created: ", output_folder)
-} else {
-  message("The directory already exists: ", output_folder)
+for (dir in paths) {
+  if (dir.exists(dir)) {
+    print(paste("The directory", dir, "already exists!"))
+  } else {
+    print(paste("Making", dir, "!" ))
+    dir.create(dir) 
+  }
 }
 
 # 3- Define input ----
@@ -29,6 +36,17 @@ if (!dir.exists(output_folder)) {
 input_tbl <- DB_tbl_final_seqs # objeto final do lgc_db_full--mai25.R, input deste trabalho
 metadata_tbl <- read_excel("/home/igorhan/projetos/LGCdb/data/db_tbl/Banco de Tecidos LGC 2023.xlsx")
 
+# Trichogenes CO1 sequences
+co1_trichogenes_str <- readDNAStringSet(paste0(data_folder, "/trichogenes/Trichogenes_COI.fasta")) 
+  
+co1_trichogenes <- tibble("header" = names(co1_trichogenes_str),
+                          "sequence" = as.character(co1_trichogenes_str)) %>%
+  mutate(Sequence = str_remove_all(sequence, "-"),
+         Identifier = sapply(str_split(header, "_", n = 2), `[`, 1),
+         Names = "Trichogenes claviger",
+         `Composed name` = paste0("LGC_DC", Identifier, " ", Names)) %>% 
+  select(-c(header, sequence))
+  
 # 4- Workaround on metadata ----
 
 # Filtrando as bacias e correcoes menores
@@ -37,9 +55,8 @@ metadata_tbl_less <- metadata_tbl %>%
   #                     "Jequitinhonha",
   #                     "São Francisco",
   #                     "Pardo")) %>%
-  filter(Gênero == "Trichogenes") %>% 
-  mutate(Identifier = str_pad(`Número LGC`, 4, "left", 0)) %>% 
-  mutate(País = case_when(País == "Brasil" ~ "Brazil",
+  mutate(Identifier = str_pad(`Número LGC`, 4, "left", 0),
+         País = case_when(País == "Brasil" ~ "Brazil",
                           TRUE ~ País)) %>%
   select(#`Status da amostra`,
          `Número LGC`,
@@ -133,7 +150,7 @@ View(metadata_tbl_less)
 View(metadata_tbl_final_less)
 
 metadata_tbl_final_less %>% 
-  select(data_simplificada, `Data da coleta`) %>% 
+  select(Identifier, `Espécie 2023`, data_simplificada, `Data da coleta`) %>% 
   filter(is.na(data_simplificada)) %>%  
   distinct()
 
@@ -147,15 +164,21 @@ colnames(input_tbl)
 cat(paste0('"', colnames(input_tbl), '"', collapse = ","))
 
 input_tbl_less <- input_tbl %>% 
-  filter(`River basin` %in% c("SF", 
-                              "DC", 
-                              "JQ", 
-                              "PD")) %>% 
+  # filter(`River basin` %in% c("SF", 
+  #                             "DC", 
+  #                             "JQ", 
+  #                             "PD")) %>% 
+  filter(genus == c("Trichogenes")) %>% # Trichogenes
   select("Composed name",
          "Sequence",
-         "River basin",
+         # "River basin",
          "Identifier",
-         "Names")
+         "Names") 
+
+# Adicionando os dados de CO1 de Trichogenes
+input_tbl_less <-
+  input_tbl_less %>% 
+  bind_rows(co1_trichogenes)
 
 View(input_tbl_less)  
 
@@ -163,26 +186,22 @@ View(input_tbl_less)
 input_tbl_format <- 
   input_tbl_less %>%
   # input_tbl_less[1,] %>%
-  mutate(SeqID = str_extract(`Composed name`, "^[^ ]+")) %>% 
   rename("organism" = Names) %>%
-  mutate("isolate" = Identifier) %>% 
-  mutate(isolation_source = case_when(
-    `River basin` == "SF" ~ "Sao Francisco River Basin",
-    `River basin` == "DC" ~ "Doce River Basin",
-    `River basin` == "JQ" ~ "Jequitinhonha River Basin",
-    TRUE ~ "Pardo River Basin"
-  )) %>%
   left_join(metadata_tbl_final_less,
             by = "Identifier") %>% 
-  mutate(header = paste0(
-    ">", SeqID,
-    " [", "organism", "=", organism, "]",
-    " [", "isolate", "=", isolate, "]",
-    " [", "isolation_source", "=", isolation_source, "]",
-    " [", "country", "=", País, "]",
-    " [", "collection_date", "=", data_simplificada, "]"
-  # )) 
-  )) %>%
+  mutate(SeqID = str_extract(`Composed name`, "^[^ ]+"),
+         "isolate" = Identifier,
+         isolation_source = case_when(
+           Bacia == "São Francisco" ~ "Sao Francisco River Basin",
+           Bacia == "Rio Doce" ~ "Doce River Basin",
+           Bacia == "Jequitinhonha" ~ "Jequitinhonha River Basin",
+           TRUE ~ "BASIN MISSING")) %>% 
+  mutate(header = paste0(">", SeqID, 
+                         " [", "organism", "=", organism, "]", 
+                         " [", "isolate", "=", isolate, "]", 
+                         " [", "isolation_source", "=", isolation_source, "]", 
+                         " [", "country", "=", País, "]", 
+                         " [", "collection_date", "=", data_simplificada, "]")) %>%
   select(`Número LGC`,
          Identifier,
          organism,
@@ -193,14 +212,15 @@ input_tbl_format <-
          isolate,
          isolation_source,
          header,
-         Sequence)
+         Sequence) 
 
 View(input_tbl_format)
 
 #Sequencias sem collection_date
 no_date <- 
   input_tbl_format %>%
-  select(`Número LGC`, `Espécie 2023`, Identifier, organism, data_simplificada, `Data da coleta`) %>% 
+  select(`Número LGC`, `Espécie 2023`, Identifier, 
+         organism, data_simplificada, `Data da coleta`) %>% 
   filter(is.na(data_simplificada)) 
 
 View(no_date)
@@ -217,24 +237,24 @@ input_tbl_format_filt <- input_tbl_format %>%
 
 View(input_tbl_format_filt)
 
-#Creating test .fasta for the test submission
-fasta_output <- c(rbind(input_tbl_format_filt$header, input_tbl_format_filt$Sequence)) 
+#Creating .fasta for submission
+fasta_tbl <- input_tbl_format_filt %>% 
+  # filter(Identifier %in% c(8120:8124)) # COX1 gene
+  filter(Identifier %in% c(8125:8128)) # 12s rRNA gene
+
+fasta_output <- c(rbind(fasta_tbl$header, fasta_tbl$Sequence))
+  
+  
 # write(fasta_output, paste0(output_folder, "/LGC12sDB_genbank.fasta")) 
-write(fasta_output, paste0(output_folder, "/LGC12sDB_genbank_test.fasta"))
+# write(fasta_output, paste0(output_folder, "/LGC12sDB_genbank_test.fasta"))
+# write(fasta_output, paste0(output_folder, "/trichogenes-COX1_genbank.fasta"))
+write(fasta_output, paste0(output_folder, "/trichogenes-12srDNA_genbank.fasta"))
 
 #Reading the LGC12sDB's .fasta 
 DB_fasta <- readDNAStringSet(filepath = paste0(output_folder, 
                                       # "/LGC12sDB_genbank.fasta"))
-                                      "/LGC12sDB_genbank_test.fasta"))
+                                      # "/LGC12sDB_genbank_test.fasta"))
+                                      # "/trichogenes-COX1_genbank.fasta"))
+                                      "/trichogenes-12srDNA_genbank.fasta"))
 
 BrowseSeqs(DB_fasta)
-  
-  
-  
-  
-  
-  
-
-
-
-
