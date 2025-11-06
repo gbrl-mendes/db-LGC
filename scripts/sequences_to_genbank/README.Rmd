@@ -1,0 +1,91 @@
+---
+**Author:** Gabriel M.\
+**Date:** November, 2025
+---
+
+# sequences_to_genbank
+
+Created in July 2025 to streamline exporting sequences from the LGC12sDB database to GenBank, the `sequences_to_genbank` function evolved from an earlier pipeline (`tibble_to_genbank.R`) developed to format 12S rRNA sequences from the `DB_tbl_final_seqs` data frame and metadata table `Banco de Tecidos LGC 2023.xlsx`.
+
+The original pipeline generated FASTA files compatible with GenBank’s submission format, including standardized headers such as:
+
+`LGC_SF2306 [organism=Salminus hilarii] [isolate=2306] [isolation_source=Sao Francisco River Basin] [country=Brazil] [collection_date=2010/11]`
+
+Although initially tested with a small subset of six sequences, the pipeline became cumbersome for submitting FASTA files for different species groups (e.g., Trichogenes), prompting the development of the generalized and flexible `sequences_to_genbank` function.
+
+## Overview
+
+`sequences_to_genbank` accepts as input the LGC12sDB sequences and accompanying metadata, each provided either as a data frame/tibble or file paths to `.xlsx` or `.csv` files. It automates filtering by species/genera and river basin, metadata integration, date formatting, and FASTA file creation ready for GenBank submission.
+
+------------------------------------------------------------------------
+
+## Function Arguments
+
+-   **input_tbl**: The sequences table, either as a data frame/tibble or path to a CSV/Excel file containing the LGC12sDB sequences.
+
+-   **metadata_tbl**: The metadata table of tissue samples, either as a data frame/tibble or path to a CSV/Excel file (e.g., `Banco de Tecidos LGC 2023.xlsx`).
+
+-   **output_folder**: The directory path where the resulting FASTA file will be saved. It will be created if it does not exist.
+
+-   **output_filename**: (Default `"output.fasta"`) The name of the output FASTA file.
+
+-   **species_filter**: An optional character vector to filter sequences by species or genus. When provided, only matching sequences are included in the FASTA output.
+
+-   **basin_filter**: An optional character vector to filter sequences by river basin. If specified, only sequences from these basins are included.
+
+-   **add_extra_fastas**: An optional named list of additional DNAStringSet objects to append to the FASTA output, each list name used as organism name.
+
+-   **verbose**: (Default `TRUE`) When `TRUE`, prints progress messages to guide the user.
+
+-   **which_species**, **which_genus**, **which_basin**: Boolean flags. When set to `TRUE`, the function returns a sorted vector of available species, genera, or river basins from the input sequences. This helps users identify valid filter values before export.
+
+------------------------------------------------------------------------
+
+## Usage Summary
+
+-   Provides seamless reading of sequence and metadata files or direct objects.
+-   Handles multiple, flexible filters on species/genera and basins.
+-   Formats collection dates consistently for GenBank requirements.
+-   Adds customized headers with isolate numbers, collection source, country, and date.
+-   Includes verbose messaging and helpful user warnings on empty filter results.
+-   Enables easy retrieval of valid filter values to assist user choices.
+
+This function simplifies and standardizes the preparation of submission-ready FASTA files for diverse subsets of the LGC12sDB, dramatically improving usability compared to previous pipeline scripts.
+
+------------------------------------------------------------------------
+
+## Exemple
+
+```{r}
+sequences_to_genbank(
+input_tbl = "/home/igorhan/projetos/LGCdb/LGC12Sdb/LGC12Sdb_tbl-2024-09-24.xlsx",
+metadata_tbl = "/home/igorhan/projetos/LGCdb/data/db_tbl/Banco de Tecidos LGC 2023.xlsx",
+species_filter = c("Salminus"),
+basin_filter = c("SF"),
+output_folder = "/caminho/para/saida",
+output_filename = "Salminus_PD_genbank.fasta",
+verbose = TRUE
+)
+```
+
+Or to list available species before filtering:
+
+```{r}
+available_species <- sequences_to_genbank(
+input_tbl = "/path/to/LGC12Sdb_sequences.xlsx",
+metadata_tbl = "/path/to/Banco_de_Tecidos_LGC.xlsx",
+which_species = TRUE
+)
+print(available_species)
+```
+
+To list available species before filtering:
+
+```{r}
+available_basins <- sequences_to_genbank(
+input_tbl = "/path/to/LGC12Sdb_sequences.xlsx",
+metadata_tbl = "/path/to/Banco_de_Tecidos_LGC.xlsx",
+which_basin = TRUE
+)
+print(available_basins)
+```
